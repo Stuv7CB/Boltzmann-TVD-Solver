@@ -10,6 +10,42 @@
 class Parser
 {
 public:
+    static Node parseNode(const std::string &line)
+    {
+        std::stringstream stream;
+        stream << line;
+        uint32_t id;
+        double x, y, z;
+        stream >> id >> x >> y >> z;
+        return Node(x, y, z, id);
+    }
+
+    static Element parseElement(const std::string &line)
+    {
+        std::stringstream stream;
+        stream << line;
+        uint32_t id, type, numberOfTags;
+        stream >> id >> type >> numberOfTags;
+        std::vector<uint32_t> tags;
+        std::vector<uint32_t> nodes;
+        for (auto i = 0; i < numberOfTags; i++)
+        {
+            uint32_t tag;
+            stream >> tag;
+            tags.emplace_back(tag);
+        }
+        std::string point;
+        while (std::getline(stream, point, ' '))
+        {
+            if(point.empty())
+            {
+                continue;
+            }
+            nodes.emplace_back(std::stoi(point));
+        }
+        return Element(id, type, tags, nodes);
+    }
+
 	static void parse(std::ifstream &file, std::vector<Node> &nodes, std::vector<Element> &elements)
 	{
 		std::string line;
@@ -28,14 +64,7 @@ public:
 					{
 						break;
 					}
-
-					uint32_t id;
-					double x, y, z;
-					stream.str("");
-					stream.clear();
-					stream << line;
-					stream >> id >> x >> y >> z;
-					nodes.emplace_back(x, y, z, id);
+                    nodes.emplace_back(parseNode(line));
 				}
 			}
 			if(line.compare("$Elements") == 0)
@@ -52,62 +81,9 @@ public:
 						break;
 					}
 
-					uint32_t id, type, numTag, physId, t;
-					stream.str("");
-					stream.clear();
-					stream << line;
-					stream >> id >> type >> numTag;
-					for (auto i = 0; i < numTag; i++)
-					{
-						if (i == 0)
-						{
-							stream >> physId;
-							continue;
-						}
-						stream >> t;
-					}
-					std::vector<uint32_t> points;
-					std::string st;
-					while (std::getline(stream, st, ' '))
-					{
-						if(st.empty())
-						{
-							continue;
-						}
-						points.push_back(std::stoi(st));
-					}
-					std::vector<Element *> neigh;
-					elements.emplace_back(id, type, physId, points);
-					for (auto iter = elements.begin(); iter != (elements.end() - 1); ++iter)
-					{
-						auto it = std::find_if(iter, elements.end()-1, [&](Element el)->bool
-						{
-							int i = 0;
-							for (auto point : points)
-							{
-								if (std::find(iter->points.begin(), iter->points.end(), point) != iter->points.end())
-								{
-									i++;
-								}
-							}
-							if (i == 3)
-							{
-								return true;
-							}
-							return false;
-						});
-						if (it != (elements.end() - 1))
-						{
-							neigh.push_back(&(*it));
-							iter = it;
-							it->neighbours.push_back(&(*((elements.end() - 1))));
-						}
-						else
-						{
-							break;
-						}
-					}
-					(elements.end() - 1)->neighbours = neigh;
+                    auto element = parseElement(line);
+
+                    elements.emplace_back(element);
 				}
 			}
 		}

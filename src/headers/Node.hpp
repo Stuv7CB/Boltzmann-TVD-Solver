@@ -1,12 +1,13 @@
 #pragma once
 #include <cstdint>
+#include "Point.hpp"
 
-struct Node
+class Node
 {
-	const double x;
-	const double y;
-	const double z;
-	uint32_t id;
-	Node(double x, double y, double z, uint32_t id) : x(x), y(y), z(z), id(id)
+private:
+    Point point;
+    uint32_t id;
+public:
+    Node(const double &x, const double &y, const double &z, const uint32_t &id) : point(Point(x, y, z)), id(id)
 	{}
 };
